@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "meta-skill"
+version = "0.1.0"
+description = "AI Coding Assistant Skills Discovery & Analysis Tool / AI 编程助手技能发现与分析工具"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    { name = "Meta-Skill Contributors" }
+]
+keywords = ["ai", "claude-code", "codex", "skills", "agent"]
+
+[project.scripts]
+meta-skill = "meta_skill.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["meta_skill*"]
