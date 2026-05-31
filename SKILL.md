@@ -19,52 +19,22 @@ Invoke this skill when the user:
 - Asks about skill coverage or gaps (e.g., "Do I have any security skills installed?")
 - Wants a translated/localized overview (e.g., "用中文告诉我有哪些技能")
 
-## How to Use
-
-### Step 1: Run the Scanner
+## Quick Commands
 
 ```bash
-# Full scan (deduplicated, in Chinese)
-python3 -m meta_skill.cli --locale zh_CN --unique
-
-# Search for specific skills (supports Chinese keywords!)
-python3 -m meta_skill.cli --locale zh_CN --unique --search 调试
-python3 -m meta_skill.cli --locale zh_CN --unique --search tdd
-
-# Filter by application
-python3 -m meta_skill.cli --locale zh_CN --unique --app superpowers
-
-# JSON output for programmatic use
-python3 -m meta_skill.cli --locale zh_CN --unique --format json
-
-# English output
-python3 -m meta_skill.cli --locale en_US --unique
-
-# Save to file
-python3 -m meta_skill.cli --locale zh_CN --unique --output report.md
+ms                  # 扫描所有技能（自动检测语言，自动去重）
+ms zh               # 中文输出
+ms en               # 英文输出
+ms superpowers       # 只看 superpowers 的技能
+ms search 调试       # 搜索调试相关技能（支持中文！）
+ms search tdd        # 搜索 TDD 相关技能
+ms json             # JSON 格式输出
+ms -o report.md     # 保存到文件
+ms -q               # 静默模式
+ms -a               # 显示所有（不去重）
 ```
 
-### Step 2: Present Results
-
-Based on the user's question, present the information clearly:
-
-**For "what skills do I have?" → Show the grouped overview with counts**
-
-**For "what does skill X do?" → Show the specific skill with its Chinese name, description, and usage scenario**
-
-**For "find me skills for X" → Use `--search` with relevant keywords**
-
-**For app-specific questions → Use `--app <name>` to filter**
-
-### Step 3: Offer Actionable Guidance
-
-- Explain any skill in more detail (read its SKILL.md)
-- Help install new skills using `npx skills add`
-- Save the report to a file with `--output`
-
 ## Search Keyword Mapping
-
-Chinese-to-English expansion for better results:
 
 | Chinese | English Keywords |
 |---------|-----------------|

@@ -16,46 +16,13 @@
 
 ## 安装
 
-### 方式1：一键安装脚本（推荐）
-
 ```bash
 git clone https://github.com/jiangjie714/Meta-Skill.git
 cd Meta-Skill
 ./scripts/install.sh
 ```
 
-自动安装到 Claude Code、Codex、OpenCode、Gemini 的技能目录。
-
-### 方式2：手动安装
-
-**Claude Code:**
-```bash
-git clone https://github.com/jiangjie714/Meta-Skill.git
-cp -r Meta-Skill/.claude/skills/meta-skill ~/.claude/skills/meta-skill
-cp -r Meta-Skill/meta_skill ~/.claude/skills/meta-skill/meta_skill
-```
-
-**Codex:**
-```bash
-mkdir -p ~/.codex/skills/meta-skill
-cp Meta-Skill/skills/meta-skill/SKILL.md ~/.codex/skills/meta-skill/
-cp -r Meta-Skill/meta_skill ~/.codex/skills/meta-skill/meta_skill
-```
-
-**OpenCode:**
-```bash
-mkdir -p ~/.config/opencode/skills/meta-skill
-cp Meta-Skill/.claude/skills/meta-skill/SKILL.md ~/.config/opencode/skills/meta-skill/
-cp -r Meta-Skill/meta_skill ~/.config/opencode/skills/meta-skill/meta_skill
-```
-
-### 方式3：作为 Python 包使用
-
-```bash
-cd Meta-Skill
-pip install -e .
-meta-skill --locale zh_CN --unique
-```
+安装后自动获得 `ms` 命令，技能安装到 Claude Code / Codex / OpenCode / Gemini。
 
 ### 卸载
 
@@ -63,7 +30,18 @@ meta-skill --locale zh_CN --unique
 ./scripts/uninstall.sh
 ```
 
-## 使用方法
+## 快速开始
+
+```bash
+ms                  # 扫描所有技能（自动检测语言，自动去重）
+ms zh               # 中文输出
+ms en               # 英文输出
+ms superpowers       # 只看 superpowers 的技能
+ms search 调试       # 搜索调试相关技能（支持中文！）
+ms search tdd        # 搜索 TDD 相关技能
+ms json             # JSON 格式输出
+ms -o report.md     # 保存到文件
+```
 
 ### 在 AI 编程助手中使用
 
@@ -75,45 +53,6 @@ superpowers 里面有什么技能？
 什么是 TDD 技能？什么时候该用它？
 帮我找调试相关的技能
 用中文告诉我有哪些前端技能？
-```
-
-AI 助手会自动调用 Meta-Skill 扫描并展示结果。
-
-### 命令行使用
-
-```bash
-# 扫描所有技能（自动检测系统语言，中文系统默认中文输出）
-python3 -m meta_skill.cli
-
-# 使用简体中文输出
-python3 -m meta_skill.cli --locale zh_CN
-
-# 去重（同一技能名称只保留一条）
-python3 -m meta_skill.cli --unique
-
-# 搜索技能（支持中文关键词！）
-python3 -m meta_skill.cli --search 调试
-python3 -m meta_skill.cli --search tdd
-
-# 按应用过滤
-python3 -m meta_skill.cli --app superpowers
-
-# JSON 格式输出
-python3 -m meta_skill.cli --format json
-
-# 保存到文件
-python3 -m meta_skill.cli --output report.md
-```
-
-### Python API
-
-```python
-from meta_skill.scanner import scan_all_skills
-from meta_skill.report import generate_markdown_report, generate_json_report
-
-skills = scan_all_skills()
-report = generate_markdown_report(skills, locale="zh_CN")
-json_data = generate_json_report(skills, locale="zh_CN")
 ```
 
 ## 扫描范围
@@ -152,9 +91,25 @@ json_data = generate_json_report(skills, locale="zh_CN")
 - 🇨🇳 **中文翻译**：内置 100+ 术语和适用场景的中文字典
 - 🔎 **中英搜索**：搜索"调试"可找到 debug、debugging、investigate 等技能
 - 📊 **分组报告**：按来源应用分组，附带统计信息
-- 🔄 **去重**：`--unique` 标志移除不同来源的重复技能
+- 🔄 **去重**：`-a` 标志显示所有来源，默认去重
 - 📋 **多格式**：Markdown 报告和 JSON 编程接口
 - 🚀 **零依赖**：纯 Python，无需外部包
+
+## 命令参考
+
+| 命令 | 说明 |
+|------|------|
+| `ms` | 扫描所有技能（自动检测语言，自动去重） |
+| `ms zh` | 中文输出 |
+| `ms en` | 英文输出 |
+| `ms superpowers` | 只看 superpowers 的技能 |
+| `ms search 调试` | 搜索调试相关技能（支持中文） |
+| `ms search tdd` | 搜索 TDD 相关技能 |
+| `ms json` | JSON 格式输出 |
+| `ms -o report.md` | 保存到文件 |
+| `ms -q` | 静默模式 |
+| `ms -a` | 显示所有（不去重） |
+| `ms -h` | 显示帮助 |
 
 ## 项目结构
 
@@ -165,12 +120,12 @@ Meta-Skill/
 ├── .claude/skills/meta-skill/   # Claude Code 技能定义
 ├── skills/meta-skill/           # Codex/OpenCode 技能定义
 ├── meta_skill/                  # Python 核心模块
-│   ├── __init__.py
 │   ├── scanner.py               # 文件系统扫描器
 │   ├── translator.py            # 翻译/本地化模块
 │   ├── report.py                # 报告生成器
 │   └── cli.py                   # 命令行入口
 ├── scripts/
+│   ├── ms                       # ms 快捷命令
 │   ├── install.sh               # 一键安装脚本
 │   └── uninstall.sh             # 卸载脚本
 ├── SKILL.md                     # 项目级技能定义
@@ -178,12 +133,6 @@ Meta-Skill/
 ├── AGENTS.md                    # 开发指南
 └── pyproject.toml               # Python 包配置
 ```
-
-## 支持的语言
-
-- **zh_CN / zh_TW** — 完整中文翻译，100+ 术语字典
-- **en_US** — 英语（默认）
-- 其他语言回退到英语，部分翻译
 
 ## License
 

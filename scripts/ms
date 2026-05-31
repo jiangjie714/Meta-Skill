@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+# ms — Meta-Skill 快捷命令
+# 用法:
+#   ms              扫描所有技能（自动检测语言，自动去重）
+#   ms zh           中文输出
+#   ms en           英文输出
+#   ms superpowers  按应用名筛选
+#   ms search 调试   搜索技能（支持中文）
+#   ms json         输出 JSON
+#   ms -o report.md 保存到文件
+
+set -e
+
+# 定位 meta_skill 模块 — 依次查找多个可能的位置
+find_meta_skill() {
+    local candidates=(
+        # 1. 项目开发目录
+        "$HOME/Desktop/dev/Claude/Meta-Skill"
+        # 2. Claude Code 技能目录
+        "$HOME/.claude/skills/meta-skill"
+        # 3. Codex 技能目录
+        "$HOME/.codex/skills/meta-skill"
+        # 4. OpenCode 技能目录
+        "$HOME/.config/opencode/skills/meta-skill"
+        # 5. Gemini 技能目录
+        "$HOME/.gemini/antigravity/skills/meta-skill"
+    )
+
+    for dir in "${candidates[@]}"; do
+        if [ -d "$dir/meta_skill" ] && [ -f "$dir/meta_skill/cli.py" ]; then
+            echo "$dir"
+            return 0
+        fi
+    done
+    return 1
+}
+
+PYTHON_MOD=$(find_meta_skill)
+if [ -z "$PYTHON_MOD" ]; then
+    echo "❌ 找不到 meta_skill 模块，请确认 Meta-Skill 已安装" >&2
+    echo "   安装方式: cd Meta-Skill && ./scripts/install.sh" >&2
+    exit 1
+fi
+
+# 检测系统语言
+detect_locale() {
+    local locale="${LANG:-${LC_ALL:-${LC_MESSAGES:-}}}"
+    locale="${locale%%.*}"
+    case "$locale" in
+        zh_CN*|zh_TW*|zh_HK*|zh_SG*) echo "zh_CN" ;;
+        ja_JP*) echo "ja_JP" ;;
+        ko_KR*) echo "ko_KR" ;;
+        *) echo "en_US" ;;
+    esac
+}
+
+# macOS 优先检测
+if [ "$(uname)" = "Darwin" ]; then
+    MAC_LOCALE=$(defaults read -g AppleLocale 2>/dev/null || echo "")
+    if echo "$MAC_LOCALE" | grep -qi "^zh"; then
+        DEFAULT_LOCALE="zh_CN"
+    else
+        DEFAULT_LOCALE=$(detect_locale)
+    fi
+else
+    DEFAULT_LOCALE=$(detect_locale)
+fi
+
+# 解析参数
+LOCALE="$DEFAULT_LOCALE"
+UNIQUE="--unique"
+APP=""
+SEARCH=""
+FORMAT="markdown"
+OUTPUT=""
+QUIET=""
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        zh|zh_CN|zh_CN*|zh-TW|zh_TW*)
+            LOCALE="zh_CN"; shift ;;
+        en|en_US|en_US*|en-GB|en_GB*)
+            LOCALE="en_US"; shift ;;
+        ja|ja_JP|ja_JP*)
+            LOCALE="ja_JP"; shift ;;
+        ko|ko_KR|ko_KR*)
+            LOCALE="ko_KR"; shift ;;
+        json|j)
+            FORMAT="json"; shift ;;
+        md|markdown|m)
+            FORMAT="markdown"; shift ;;
+        -o|--output)
+            OUTPUT="$2"; shift 2 ;;
+        -q|--quiet)
+            QUIET="--quiet"; shift ;;
+        -a|--all)
+            UNIQUE=""; shift ;;
+        search|s|find|f|搜索|查|找)
+            shift; SEARCH="$1"; shift ;;
+        -h|--help|help|帮助|帮)
+            echo "ms — Meta-Skill 快捷命令"
+            echo ""
+            echo "用法: ms [选项] [参数]"
+            echo ""
+            echo "选项:"
+            echo "  zh          中文输出（默认）"
+            echo "  en          英文输出"
+            echo "  json        JSON 格式输出"
+            echo "  search 关键词 搜索技能（支持中文）"
+            echo "  -o 文件      保存到文件"
+            echo "  -q          静默模式"
+            echo "  -a          显示所有（不去重）"
+            echo "  -h          显示帮助"
+            echo ""
+            echo "示例:"
+            echo "  ms              扫描所有技能"
+            echo "  ms zh           中文输出"
+            echo "  ms en           英文输出"
+            echo "  ms superpowers  只看 superpowers 的技能"
+            echo "  ms search 调试   搜索调试相关技能"
+            echo "  ms search tdd   搜索 TDD 相关技能"
+            echo "  ms json         输出 JSON"
+            echo "  ms -o report    保存到文件"
+            exit 0 ;;
+        *)
+            # 未知参数当作 app 名处理
+            APP="$1"; shift ;;
+    esac
+done
+
+# 构建并执行命令
+cd "$PYTHON_MOD"
+CMD="python3 -m meta_skill.cli --locale $LOCALE $UNIQUE --format $FORMAT"
+[ -n "$QUIET" ] && CMD="$CMD $QUIET"
+[ -n "$OUTPUT" ] && CMD="$CMD --output $OUTPUT"
+[ -n "$APP" ] && CMD="$CMD --app $APP"
+[ -n "$SEARCH" ] && CMD="$CMD --search \"$SEARCH\""
+
+eval $CMD

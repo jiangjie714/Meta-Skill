@@ -3,8 +3,12 @@
 set -e
 
 HOME_DIR="$HOME"
+BIN_DIR="$HOME_DIR/.local/bin"
 
 echo "🔍 Uninstalling Meta-Skill..."
+
+# Remove ms command
+rm -f "$BIN_DIR/ms" 2>/dev/null && echo "✅ Removed ms command" || echo "⏭️  ms command not found"
 
 # Remove from Claude Code
 rm -rf "$HOME_DIR/.claude/skills/meta-skill" 2>/dev/null && echo "✅ Removed from Claude Code" || echo "⏭️  Not found in Claude Code"
@@ -20,3 +24,4 @@ rm -rf "$HOME_DIR/.gemini/antigravity/skills/meta-skill" 2>/dev/null && echo "�
 
 echo ""
 echo "🎉 Meta-Skill has been uninstalled."
+echo "Note: PATH entry in ~/.zshrc or ~/.bashrc can be removed manually if desired."
