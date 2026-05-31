@@ -11,6 +11,7 @@ from .report import generate_markdown_report, generate_json_report
 from .cache import (
     save_cache, load_cache, is_cache_fresh, get_cache_age,
     format_cache_summary, format_cache_app, format_cache_search,
+    cache_exists, CACHE_FILE,
     _dict_to_skill,
 )
 
@@ -65,17 +66,17 @@ def main():
   ms gstack                  查看 GStack 技能详情（从缓存）
   ms search 调试             搜索技能（从缓存，支持中文）
   ms --refresh               重新扫描更新缓存
-  ms --scan                  强制重新扫描
   ms --locale zh_CN --scan   重新扫描并切换语言
   ms json --scan             JSON 格式输出（需 --scan）
   ms -o report.md --scan     保存报告到文件
         """,
     )
 
+    parser.add_argument("app", nargs="?", default=None,
+                        help="查看指定应用的技能（如 gstack, superpowers）")
     parser.add_argument("--locale", "-l", default=None, help="输出语言")
     parser.add_argument("--format", "-f", choices=["markdown", "md", "json"], default="markdown", help="输出格式")
     parser.add_argument("--output", "-o", default=None, help="输出文件路径")
-    parser.add_argument("--app", "-a", default=None, help="只显示指定应用的技能")
     parser.add_argument("--search", "-s", default=None, help="搜索技能（支持中英文）")
     parser.add_argument("--unique", "-u", action="store_true", help="去重")
     parser.add_argument("--quiet", "-q", action="store_true", help="静默模式")
@@ -101,6 +102,11 @@ def main():
         elif args.output:
             result = generate_markdown_report(skills, locale, Path(args.output))
             print(f"✅ 报告已保存到: {args.output}" if is_zh else f"✅ Report saved to: {args.output}")
+        else:
+            # Default: show summary from cache after scan
+            cache_data = load_cache(max_age=0)
+            if cache_data:
+                print(format_cache_summary(cache_data, locale))
         return
 
     # ─── Load cache (fast path) ─────────────────────────────────
@@ -126,8 +132,9 @@ def main():
         return
 
     # ─── App filter from cache ──────────────────────────────────
-    if args.app:
-        print(format_cache_app(cache_data, args.app.lower(), locale))
+    app_name = args.app
+    if app_name:
+        print(format_cache_app(cache_data, app_name.lower(), locale))
         return
 
     # ─── Default: show cache summary ────────────────────────────

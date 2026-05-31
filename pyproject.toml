@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "meta-skill"
-version = "0.2.0"
+version = "0.4.0"
 description = "AI Coding Assistant Skills Discovery & Analysis Tool / AI 编程助手技能发现与分析工具"
 readme = "README.md"
 requires-python = ">=3.9"

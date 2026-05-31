@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ms — Meta-Skill 快捷命令（缓存版 ⚡）
+# ms — Meta-Skill 快捷命令（缓存优先 ⚡）
 # 首次扫描约 1 秒，之后从缓存读取约 0.05 秒
 # ms --refresh 强制重新扫描
 set -e
@@ -7,11 +7,11 @@ set -e
 # 定位 meta_skill 模块
 find_meta_skill() {
     local candidates=(
-        "$HOME/Desktop/dev/Claude/Meta-Skill"
         "$HOME/.claude/skills/meta-skill"
         "$HOME/.codex/skills/meta-skill"
         "$HOME/.config/opencode/skills/meta-skill"
         "$HOME/.gemini/antigravity/skills/meta-skill"
+        "$HOME/Desktop/dev/Claude/Meta-Skill"
     )
     for dir in "${candidates[@]}"; do
         if [ -d "$dir/meta_skill" ] && [ -f "$dir/meta_skill/cli.py" ]; then
@@ -21,12 +21,6 @@ find_meta_skill() {
     done
     return 1
 }
-
-PYTHON_MOD=$(find_meta_skill)
-if [ -z "$PYTHON_MOD" ]; then
-    echo "❌ 找不到 meta_skill 模块，请确认已安装" >&2
-    exit 1
-fi
 
 # 检测系统语言
 detect_locale() {
@@ -51,7 +45,7 @@ else
     DEFAULT_LOCALE=$(detect_locale)
 fi
 
-# 解析参数
+# Parse arguments — positional APP is now supported directly
 LOCALE="$DEFAULT_LOCALE"
 UNIQUE="--unique"
 APP=""
@@ -85,27 +79,32 @@ while [ $# -gt 0 ]; do
             FORCE_SCAN="1"; shift ;;
         search|s|find|f|搜索|查|找)
             shift; SEARCH="$1"; shift ;;
+        -s|--search)
+            shift; SEARCH="$1"; shift ;;
+        -l|--locale)
+            LOCALE="$2"; shift 2 ;;
         -h|--help|help|帮助|帮)
-            echo "ms — Meta-Skill 快捷命令（缓存版 ⚡）"
+            echo "ms — Meta-Skill 快捷命令（缓存优先 ⚡）"
             echo ""
             echo "首次扫描约 1 秒，之后从缓存读取约 0.05 秒"
             echo ""
-            echo "用法: ms [选项] [参数]"
+            echo "用法: ms [选项] [应用名]"
             echo ""
             echo "选项:"
-            echo "  zh          中文输出（默认）"
-            echo "  en          英文输出"
-            echo "  json        JSON 格式输出（需 --scan）"
-            echo "  search 关键词 搜索技能（支持中文）"
-            echo "  -o 文件      保存到文件（需 --scan）"
-            echo "  -q          静默模式"
-            echo "  -a          显示所有（不去重）"
-            echo "  -r/--refresh 重新扫描更新缓存"
-            echo "  -h          显示帮助"
+            echo "  zh              中文输出（默认）"
+            echo "  en              英文输出"
+            echo "  search 关键词    搜索技能（支持中文）"
+            echo "  json            JSON 格式输出（需 --scan）"
+            echo "  -o 文件          保存到文件（需 --scan）"
+            echo "  -q              静默模式"
+            echo "  -a              显示所有（不去重）"
+            echo "  -r/--refresh     重新扫描更新缓存"
+            echo "  -h              显示帮助"
             echo ""
             echo "示例:"
             echo "  ms              显示缓存摘要（秒级响应 ⚡）"
             echo "  ms gstack       查看 GStack 技能详情"
+            echo "  ms superpowers  查看 Superpowers 技能详情"
             echo "  ms search 调试    搜索调试技能"
             echo "  ms --refresh    重新扫描更新缓存"
             exit 0 ;;
@@ -114,26 +113,40 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-# 构建 Python 命令
+# Build and run Python command
+PYTHON_MOD=$(find_meta_skill)
+if [ -z "$PYTHON_MOD" ]; then
+    # Try system-installed module
+    if python3 -c "import meta_skill" 2>/dev/null; then
+        if [ -n "$FORCE_SCAN" ]; then
+            exec python3 -m meta_skill.cli --locale "$LOCALE" $UNIQUE --refresh ${SEARCH:+--search "$SEARCH"} ${OUTPUT:+--output "$OUTPUT"} $QUIET ${APP:+$APP}
+        elif [ -n "$SEARCH" ]; then
+            exec python3 -m meta_skill.cli --locale "$LOCALE" --search "$SEARCH"
+        elif [ -n "$APP" ]; then
+            exec python3 -m meta_skill.cli --locale "$LOCALE" $APP
+        else
+            exec python3 -m meta_skill.cli --locale "$LOCALE"
+        fi
+    else
+        echo "❌ 找不到 meta_skill 模块，请确认已安装" >&2
+        exit 1
+    fi
+fi
+
 cd "$PYTHON_MOD"
 
 if [ -n "$FORCE_SCAN" ]; then
-    # 强制重新扫描
-    CMD="python3 -m meta_skill.cli --locale $LOCALE $UNIQUE --format $FORMAT --refresh"
+    CMD="python3 -m meta_skill.cli --locale $LOCALE $UNIQUE --refresh"
     [ -n "$QUIET" ] && CMD="$CMD $QUIET"
     [ -n "$OUTPUT" ] && CMD="$CMD --output $OUTPUT"
-    [ -n "$APP" ] && CMD="$CMD --app $APP"
     [ -n "$SEARCH" ] && CMD="$CMD --search \"$SEARCH\""
+    [ -n "$APP" ] && CMD="$CMD $APP"
     eval $CMD
 elif [ -n "$SEARCH" ]; then
-    # 从缓存搜索（毫秒级）
     CMD="python3 -m meta_skill.cli --locale $LOCALE --search \"$SEARCH\""
     eval $CMD
 elif [ -n "$APP" ]; then
-    # 从缓存查看指定应用（毫秒级）
-    CMD="python3 -m meta_skill.cli --locale $LOCALE --app $APP"
-    eval $CMD
+    python3 -m meta_skill.cli --locale $LOCALE $APP
 else
-    # 默认：显示缓存摘要（毫秒级）
     python3 -m meta_skill.cli --locale $LOCALE
 fi

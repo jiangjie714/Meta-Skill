@@ -1,7 +1,7 @@
 {
   "name": "meta-skill",
-  "description": "Discover, analyze, translate, and explain all installed AI coding assistant skills across Claude Code, Codex, Cursor, OpenCode, Gemini, and more. Scan your environment, understand what each skill does, and when to use it.",
-  "version": "0.2.0",
+  "description": "Discover, analyze, translate, and explain all installed AI coding assistant skills across Claude Code, Codex, Cursor, OpenCode, Gemini, and more. Cache-first architecture for instant responses.",
+  "version": "0.4.0",
   "author": {
     "name": "jiangjie714",
     "url": "https://github.com/jiangjie714"
@@ -17,7 +17,8 @@
     "localization",
     "claude-code",
     "codex",
-    "agent"
+    "agent",
+    "cache"
   ],
   "skills": [
     "./.claude/skills/meta-skill"

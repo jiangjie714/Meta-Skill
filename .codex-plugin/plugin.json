@@ -1,7 +1,7 @@
 {
   "name": "meta-skill",
-  "version": "0.2.0",
-  "description": "Discover, analyze, translate, and explain all installed AI coding assistant skills. Scan your environment, understand what each skill does, and when to use it. Supports Chinese (zh_CN) localization.",
+  "version": "0.4.0",
+  "description": "Discover, analyze, translate, and explain all installed AI coding assistant skills. Cache-first architecture for instant responses. Supports Chinese (zh_CN) localization.",
   "author": {
     "name": "jiangjie714",
     "url": "https://github.com/jiangjie714"
@@ -15,13 +15,14 @@
     "translation",
     "chinese",
     "localization",
-    "codex"
+    "codex",
+    "cache"
   ],
   "skills": "./skills/meta-skill/",
   "interface": {
     "displayName": "Meta-Skill",
     "shortDescription": "Discover and understand all your installed AI coding skills with Chinese localization",
-    "longDescription": "Scan your system for all installed AI coding assistant skills (Claude Code, Codex, Cursor, OpenCode, Gemini, Trae, CherryStudio). Understand what each skill does, which app it belongs to, and when to use it. Full Chinese (zh_CN) translation support.",
+    "longDescription": "Scan your system for all installed AI coding assistant skills (Claude Code, Codex, Cursor, OpenCode, Gemini, Trae, CherryStudio). Understand what each skill does, which app it belongs to, and when to use it. Cache-first architecture for instant responses. Full Chinese (zh_CN) translation support.",
     "developerName": "jiangjie714",
     "category": "Productivity",
     "capabilities": [
@@ -31,7 +32,8 @@
       "What skills do I have installed?",
       "我安装了哪些技能？",
       "帮我看看 superpowers 里面有哪些技能",
-      "What does the TDD skill do?"
+      "What does the TDD skill do?",
+      "ms --refresh"
     ],
     "websiteURL": "https://github.com/jiangjie714/Meta-Skill",
     "brandColor": "#6366F1"

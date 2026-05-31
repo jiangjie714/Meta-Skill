@@ -4,15 +4,13 @@
 
 **Meta-Skill** 扫描你的系统中所有已安装的 AI 编程助手技能（Claude Code、Codex、Cursor、OpenCode、Gemini 等），分析每个技能的功能，按来源分组，翻译为本地语言，并告诉你每个技能的用途和适用场景。
 
-## 为什么需要 Meta-Skill？
+## ⚡ 缓存优先架构
 
-如果你使用 AI 编程助手，你可能安装了几十个技能，但是：
-- 🔤 技能说明全是英文，看不懂
-- 📦 不知道哪些技能属于哪个应用（如 Superpowers、GStack、ECC）
-- ❓ 不知道什么时候该调用哪个技能
-- 🔍 难以发现新技能
+v0.4.0 采用**缓存优先**设计：
 
-**Meta-Skill** 帮你解决这些问题！
+1. 首次运行 `ms --refresh` 扫描所有技能，结果保存到 `~/.meta-skill/cache.json`
+2. 之后所有查询直接从缓存读取，**秒级响应**（~0.05s）
+3. AI 助手（Codex/Claude Code）读取缓存文件，无需运行 shell 命令
 
 ## 安装
 
@@ -33,19 +31,20 @@ cd Meta-Skill
 ## 快速开始
 
 ```bash
-ms                  # 扫描所有技能（自动检测语言，自动去重）
+ms --refresh        # 首次使用：扫描并创建缓存
+ms                  # 显示所有技能摘要（从缓存读取 ⚡）
+ms gstack           # 查看 GStack 技能详情
+ms superpowers      # 查看 Superpowers 技能详情
+ms search 调试       # 搜索调试相关技能（支持中文！）
 ms zh               # 中文输出
 ms en               # 英文输出
-ms superpowers       # 只看 superpowers 的技能
-ms search 调试       # 搜索调试相关技能（支持中文！）
-ms search tdd        # 搜索 TDD 相关技能
-ms json             # JSON 格式输出
-ms -o report.md     # 保存到文件
+ms json --scan      # JSON 格式输出
+ms -o report.md     # 保存报告到文件
 ```
 
 ### 在 AI 编程助手中使用
 
-安装后，直接向 AI 助手提问：
+安装后，AI 助手会自动读取 `~/.meta-skill/cache.json` 缓存文件，无需运行 shell 命令。直接向 AI 助手提问：
 
 ```
 我安装了哪些技能？
@@ -86,6 +85,7 @@ superpowers 里面有什么技能？
 
 ## 特性
 
+- ⚡ **缓存优先**：首次扫描后，所有查询从缓存读取，秒级响应
 - 🔍 **多工具扫描**：发现 Claude Code、Codex、Cursor、OpenCode、Gemini、Trae、CherryStudio 的技能
 - 🌍 **自动语言检测**：检测系统语言（macOS AppleLocale、LANG、LC_ALL）
 - 🇨🇳 **中文翻译**：内置 100+ 术语和适用场景的中文字典
@@ -99,16 +99,17 @@ superpowers 里面有什么技能？
 
 | 命令 | 说明 |
 |------|------|
-| `ms` | 扫描所有技能（自动检测语言，自动去重） |
+| `ms` | 显示所有技能摘要（从缓存读取 ⚡） |
+| `ms gstack` | 查看 GStack 技能详情 |
+| `ms superpowers` | 查看 Superpowers 技能详情 |
+| `ms search 调试` | 搜索调试相关技能（支持中文） |
 | `ms zh` | 中文输出 |
 | `ms en` | 英文输出 |
-| `ms superpowers` | 只看 superpowers 的技能 |
-| `ms search 调试` | 搜索调试相关技能（支持中文） |
-| `ms search tdd` | 搜索 TDD 相关技能 |
 | `ms json` | JSON 格式输出 |
-| `ms -o report.md` | 保存到文件 |
+| `ms -o report.md` | 保存报告到文件 |
 | `ms -q` | 静默模式 |
 | `ms -a` | 显示所有（不去重） |
+| `ms --refresh` | 重新扫描更新缓存 |
 | `ms -h` | 显示帮助 |
 
 ## 项目结构
@@ -123,12 +124,13 @@ Meta-Skill/
 │   ├── scanner.py               # 文件系统扫描器
 │   ├── translator.py            # 翻译/本地化模块
 │   ├── report.py                # 报告生成器
+│   ├── cache.py                 # 缓存管理器（核心！）
 │   └── cli.py                   # 命令行入口
 ├── scripts/
 │   ├── ms                       # ms 快捷命令
 │   ├── install.sh               # 一键安装脚本
 │   └── uninstall.sh             # 卸载脚本
-├── SKILL.md                     # 项目级技能定义
+├── SKILL.md                     # 项目级技能定义（缓存优先）
 ├── CLAUDE.md                    # Claude Code 指令
 ├── AGENTS.md                    # 开发指南
 └── pyproject.toml               # Python 包配置

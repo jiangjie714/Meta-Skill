@@ -1,9 +1,9 @@
 """Cache manager for Meta-Skill scan results.
 
-Stores scan results in a cache file for fast subsequent reads.
-Cache locations (in order of preference):
-  1. ~/.meta-skill/cache.json  (preferred)
-  2. /tmp/meta-skill/cache.json (fallback)
+Stores scan results in ~/.meta-skill/cache.json for fast subsequent reads.
+Falls back to /tmp/meta-skill/cache.json if home dir is not writable (e.g. sandbox).
+
+AI assistants should read ~/.meta-skill/cache.json directly for instant responses.
 """
 
 import json
@@ -16,34 +16,44 @@ from typing import Optional
 from .scanner import SkillInfo, group_skills_by_app, get_marketplace_info
 from .translator import detect_locale, get_language_name
 
-# Cache locations in priority order
-_CACHE_DIRS = [
-    Path.home() / ".meta-skill",
-    Path(tempfile.gettempdir()) / "meta-skill",
-]
+# Primary cache location - always preferred
+CACHE_DIR = Path.home() / ".meta-skill"
+CACHE_FILE = CACHE_DIR / "cache.json"
 
-CACHE_FILENAME = "cache.json"
+# Fallback cache location (for sandboxed environments)
+FALLBACK_CACHE_DIR = Path(tempfile.gettempdir()) / "meta-skill"
+FALLBACK_CACHE_FILE = FALLBACK_CACHE_DIR / "cache.json"
+
 DEFAULT_TTL = 86400  # 24 hours
 
 
-def _get_cache_dir() -> Path:
-    """Find a writable cache directory."""
-    for d in _CACHE_DIRS:
-        try:
-            d.mkdir(parents=True, exist_ok=True)
-            test_file = d / ".write_test"
-            test_file.write_text("ok")
-            test_file.unlink()
-            return d
-        except (OSError, PermissionError):
-            continue
-    # Last resort: current directory
-    return Path.cwd() / ".meta-skill-cache"
+def _writable_dir(path: Path) -> bool:
+    """Check if a directory is writable."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        test_file = path / ".write_test"
+        test_file.write_text("ok", encoding="utf-8")
+        test_file.unlink()
+        return True
+    except (OSError, PermissionError):
+        return False
 
 
-def _get_cache_file() -> Path:
-    """Get the cache file path."""
-    return _get_cache_dir() / CACHE_FILENAME
+def get_cache_file() -> Path:
+    """Get the active cache file path (primary or fallback)."""
+    if _writable_dir(CACHE_DIR):
+        return CACHE_FILE
+    if _writable_dir(FALLBACK_CACHE_DIR):
+        return FALLBACK_CACHE_FILE
+    # Last resort: project directory
+    return Path.cwd() / ".meta-skill-cache" / "cache.json"
+
+
+def ensure_cache_dir() -> Path:
+    """Ensure the cache directory exists and return its path."""
+    cache_file = get_cache_file()
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+    return cache_file.parent
 
 
 def _skill_to_dict(skill: SkillInfo) -> dict:
@@ -81,8 +91,8 @@ def save_cache(skills: list[SkillInfo], locale: str = None) -> Path:
     if locale is None:
         locale = detect_locale()
 
-    cache_dir = _get_cache_dir()
-    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_file = get_cache_file()
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
 
     groups = group_skills_by_app(skills)
     grouped = {}
@@ -121,49 +131,54 @@ def save_cache(skills: list[SkillInfo], locale: str = None) -> Path:
         "grouped": grouped,
         "name_index": name_index,
         "search_index": search_index,
+        "cache_file": str(cache_file),
     }
 
-    cache_file = _get_cache_file()
     cache_file.write_text(json.dumps(cache_data, ensure_ascii=False, indent=2), encoding="utf-8")
     return cache_file
 
 
-def load_cache(max_age: float = DEFAULT_TTL) -> Optional[dict]:
-    """Load scan results from cache if fresh enough."""
-    cache_file = _get_cache_file()
-    if not cache_file.exists():
-        return None
+def load_cache(max_age: float = 0) -> Optional[dict]:
+    """Load scan results from cache.
 
-    try:
-        data = json.loads(cache_file.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        return None
+    Args:
+        max_age: Maximum age in seconds. 0 means accept any age (default).
+                 Use DEFAULT_TTL to only accept fresh cache.
+    """
+    # Try primary location first
+    for cache_path in [CACHE_FILE, FALLBACK_CACHE_FILE]:
+        if cache_path.exists():
+            try:
+                data = json.loads(cache_path.read_text(encoding="utf-8"))
+                if data.get("version", 0) >= 2:
+                    if max_age <= 0 or (time.time() - data.get("timestamp", 0)) <= max_age:
+                        return data
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
 
-    if data.get("version", 0) < 2:
-        return None
-
-    timestamp = data.get("timestamp", 0)
-    if max_age > 0 and (time.time() - timestamp) > max_age:
-        return None
-
-    return data
+    return None
 
 
 def get_cache_age() -> Optional[float]:
     """Get cache age in seconds."""
-    cache_file = _get_cache_file()
-    if not cache_file.exists():
-        return None
-    try:
-        data = json.loads(cache_file.read_text(encoding="utf-8"))
-        return time.time() - data.get("timestamp", 0)
-    except Exception:
-        return None
+    for cache_path in [CACHE_FILE, FALLBACK_CACHE_FILE]:
+        if cache_path.exists():
+            try:
+                data = json.loads(cache_path.read_text(encoding="utf-8"))
+                return time.time() - data.get("timestamp", 0)
+            except Exception:
+                continue
+    return None
 
 
 def is_cache_fresh(max_age: float = DEFAULT_TTL) -> bool:
     """Check if cache exists and is fresh."""
     return load_cache(max_age=max_age) is not None
+
+
+def cache_exists() -> bool:
+    """Check if cache file exists at all."""
+    return CACHE_FILE.exists() or FALLBACK_CACHE_FILE.exists()
 
 
 def search_cache(cache_data: dict, keyword: str, locale: str = None) -> list[dict]:
