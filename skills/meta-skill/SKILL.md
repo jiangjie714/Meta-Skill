@@ -23,48 +23,68 @@ Invoke this skill when the user:
 
 ### Step 1: Run the Scanner
 
+Run the scanner to collect all skill data:
+
 ```bash
 # Full scan (deduplicated, in Chinese)
 python3 -m meta_skill.cli --locale zh_CN --unique
 
-# Search for specific skills (supports Chinese keywords!)
-python3 -m meta_skill.cli --locale zh_CN --unique --search 调试
-python3 -m meta_skill.cli --locale zh_CN --unique --search tdd
+# Search for specific skills
+python3 -m meta_skill.cli --locale zh_CN --unique --search <keyword>
 
 # Filter by application
-python3 -m meta_skill.cli --locale zh_CN --unique --app superpowers
+python3 -m meta_skill.cli --locale zh_CN --unique --app <app-name>
 
 # JSON output for programmatic use
 python3 -m meta_skill.cli --locale zh_CN --unique --format json
 
 # English output
 python3 -m meta_skill.cli --locale en_US --unique
-
-# Save to file
-python3 -m meta_skill.cli --locale zh_CN --unique --output report.md
 ```
 
-### Step 2: Present Results
+The scanner searches these paths:
 
-Based on the user's question, present the information clearly:
+| Tool | Path |
+|------|------|
+| Claude Code | `~/.claude/skills/` |
+| Claude Code Plugins | `~/.claude/plugins/marketplaces/*/` |
+| Cursor | `~/.cursor/skills-cursor/` |
+| OpenCode | `~/.config/opencode/skills/` |
+| Gemini | `~/.gemini/antigravity/skills/` |
+| Trae | `~/.trae-cn/builtin/` |
+| CherryStudio | `~/Library/Application Support/CherryStudio/Data/Skills/` |
 
-**For "what skills do I have?" → Show the grouped overview with counts**
+### Step 2: Present Results to the User
 
-**For "what does skill X do?" → Show the specific skill with its Chinese name, description, and usage scenario**
+Based on the user's question, present the information in a clear, organized way:
 
-**For "find me skills for X" → Use `--search` with relevant keywords**
+**For "what skills do I have?" questions:**
+- Show the grouped overview (by application/source)
+- Include the total count and source breakdown
 
-**For app-specific questions → Use `--app <name>` to filter**
+**For "what does skill X do?" questions:**
+- Show the specific skill's name, Chinese name, description, and usage scenario
+- Explain which app it belongs to and when to invoke it
+
+**For "find me skills for X" questions:**
+- Use `--search` with relevant keywords (supports Chinese!)
+- Present matching skills with their usage scenarios
+
+**For app-specific questions:**
+- Use `--app <name>` to filter
+- Show all skills from that app with their descriptions
 
 ### Step 3: Offer Actionable Guidance
 
+After presenting results, offer to:
 - Explain any skill in more detail (read its SKILL.md)
 - Help install new skills using `npx skills add`
 - Save the report to a file with `--output`
+- Search for specific domains with `--search`
 
 ## Search Keyword Mapping
 
-Chinese-to-English expansion for better results:
+The scanner supports Chinese-to-English keyword expansion for better results:
 
 | Chinese | English Keywords |
 |---------|-----------------|
@@ -91,3 +111,10 @@ Chinese-to-English expansion for better results:
 | ui-ux-pro-max | UI/UX 专业级设计技能 |
 | openai-codex | OpenAI Codex 插件 |
 | minimalist-entrepreneur | 极简创业者插件 |
+
+## Important Notes
+
+- The scanner automatically detects the system locale (zh_CN for Chinese macOS)
+- Use `--unique` to deduplicate skills that appear in multiple locations
+- Use `--format json` when you need to process results programmatically
+- The scanner is zero-dependency (pure Python stdlib) and runs offline

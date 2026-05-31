@@ -1,0 +1,25 @@
+{
+  "name": "meta-skill",
+  "description": "Discover, analyze, translate, and explain all installed AI coding assistant skills across Claude Code, Codex, Cursor, OpenCode, Gemini, and more. Scan your environment, understand what each skill does, and when to use it.",
+  "version": "0.2.0",
+  "author": {
+    "name": "jiangjie714",
+    "url": "https://github.com/jiangjie714"
+  },
+  "homepage": "https://github.com/jiangjie714/Meta-Skill",
+  "repository": "https://github.com/jiangjie714/Meta-Skill",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "discovery",
+    "translation",
+    "chinese",
+    "localization",
+    "claude-code",
+    "codex",
+    "agent"
+  ],
+  "skills": [
+    "./.claude/skills/meta-skill"
+  ]
+}
