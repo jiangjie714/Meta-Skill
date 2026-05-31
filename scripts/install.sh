@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Meta-Skill Installer v0.2.0
+# Meta-Skill Installer v0.3.0
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,18 +14,15 @@ NC='\033[0m'
 HOME_DIR="$HOME"
 BIN_DIR="$HOME_DIR/.local/bin"
 
-echo -e "${BLUE}🔍 Meta-Skill — AI 编程助手技能发现与安装工具${NC}"
+echo -e "${BLUE}🔍 Meta-Skill — AI 编程助手技能发现与安装工具 v0.3.0${NC}"
 echo ""
 
-# Create bin directory
+# ─── Install ms command ───────────────────────────────
 mkdir -p "$BIN_DIR"
-
-# Install ms command
 echo -e "${YELLOW}📦 Installing ms command...${NC}"
 cp "$PROJECT_DIR/scripts/ms" "$BIN_DIR/ms"
 chmod +x "$BIN_DIR/ms"
 
-# Check if bin dir is in PATH
 if echo ":$PATH:" | grep -q ":$BIN_DIR:"; then
     echo -e "${GREEN}✅ ms command installed to: $BIN_DIR/ms${NC}"
 else
@@ -42,44 +39,52 @@ else
     export PATH="$BIN_DIR:$PATH"
 fi
 
-# Install skill for Claude Code
+# ─── Helper: Install skill for a tool ────────────────
 install_for_tool() {
     local tool_name="$1"
     local target="$2"
-    local src_skill="$3"
+    local src_skill="$PROJECT_DIR/skills/meta-skill"
 
     echo -e "${YELLOW}📦 Installing for $tool_name...${NC}"
+    rm -rf "$target" 2>/dev/null
     mkdir -p "$target"
+
+    # Copy SKILL.md
     cp "$src_skill/SKILL.md" "$target/SKILL.md"
+
+    # Copy meta_skill Python module (self-contained)
     mkdir -p "$target/meta_skill"
     cp "$PROJECT_DIR/meta_skill/__init__.py" "$target/meta_skill/"
     cp "$PROJECT_DIR/meta_skill/scanner.py" "$target/meta_skill/"
     cp "$PROJECT_DIR/meta_skill/translator.py" "$target/meta_skill/"
     cp "$PROJECT_DIR/meta_skill/report.py" "$target/meta_skill/"
     cp "$PROJECT_DIR/meta_skill/cli.py" "$target/meta_skill/"
+
+    # Copy ms script
+    mkdir -p "$target/scripts"
+    cp "$PROJECT_DIR/scripts/ms" "$target/scripts/ms"
+    chmod +x "$target/scripts/ms"
+
     echo -e "${GREEN}✅ $tool_name skill installed to: $target${NC}"
 }
 
-# Claude Code
-install_for_tool "Claude Code" "$HOME_DIR/.claude/skills/meta-skill" "$PROJECT_DIR/.claude/skills/meta-skill"
+# ─── Install for each tool ────────────────────────────
+install_for_tool "Claude Code" "$HOME_DIR/.claude/skills/meta-skill"
 
-# Codex
 if [ -d "$HOME_DIR/.codex" ]; then
-    install_for_tool "Codex" "$HOME_DIR/.codex/skills/meta-skill" "$PROJECT_DIR/skills/meta-skill"
+    install_for_tool "Codex" "$HOME_DIR/.codex/skills/meta-skill"
 else
     echo -e "${YELLOW}⏭️  Codex directory not found, skipping${NC}"
 fi
 
-# OpenCode
 if [ -d "$HOME_DIR/.config/opencode" ]; then
-    install_for_tool "OpenCode" "$HOME_DIR/.config/opencode/skills/meta-skill" "$PROJECT_DIR/.claude/skills/meta-skill"
+    install_for_tool "OpenCode" "$HOME_DIR/.config/opencode/skills/meta-skill"
 else
     echo -e "${YELLOW}⏭️  OpenCode directory not found, skipping${NC}"
 fi
 
-# Gemini
 if [ -d "$HOME_DIR/.gemini" ]; then
-    install_for_tool "Gemini" "$HOME_DIR/.gemini/antigravity/skills/meta-skill" "$PROJECT_DIR/.claude/skills/meta-skill"
+    install_for_tool "Gemini" "$HOME_DIR/.gemini/antigravity/skills/meta-skill"
 else
     echo -e "${YELLOW}⏭️  Gemini directory not found, skipping${NC}"
 fi
@@ -95,3 +100,7 @@ echo -e "  ${GREEN}ms superpowers${NC}       只看 superpowers 的技能"
 echo -e "  ${GREEN}ms search 调试${NC}       搜索调试相关技能"
 echo -e "  ${GREEN}ms json${NC}             JSON 格式输出"
 echo -e "  ${GREEN}ms -o report.md${NC}     保存到文件"
+echo ""
+echo -e "${BLUE}In Codex, you can also install via:${NC}"
+echo -e "  ${GREEN}python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \\${NC}"
+echo -e "  ${GREEN}  --repo jiangjie714/Meta-Skill --path skills/meta-skill${NC}"
